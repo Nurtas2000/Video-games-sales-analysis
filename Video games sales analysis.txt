@@ -1,0 +1,279 @@
+"""
+Video Game Sales Analytics System
+Author: Nurtas Kalmakhan 
+Date: 28.04.2025
+
+A complete analytical pipeline for video game sales data including:
+- Data cleaning and preprocessing
+- Exploratory data analysis (EDA)
+- Sales trend analysis
+- Platform/genre performance metrics
+- Review score impact analysis
+- Predictive modeling
+"""
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.cluster import KMeans
+from scipy import stats
+import warnings
+warnings.filterwarnings('ignore')
+
+# ==================== DATA LOADING & CLEANING ====================
+def load_data():
+    data = pd.DataFrame([
+        [1,'Grand Theft Auto V','PS4',2014,'Action','Rockstar Games',15.32,13.68,3.42,5.52,37.94,97,8.5],
+[2,'Call of Duty: Modern Warfare 3','X360',2011,'Shooter','Activision',14.76,8.91,1.24,3.12,28.03,88,8.0],
+[3,'The Legend of Zelda: Breath of the Wild','Switch',2017,'Adventure','Nintendo',10.28,8.45,3.01,2.22,23.96,97,9.0],
+[4,'Red Dead Redemption 2','PS4',2018,'Action','Rockstar Games',9.23,8.91,1.03,2.12,21.29,97,9.3],
+[5,'Minecraft','PS4',2014,'Adventure','Microsoft Studios',8.15,7.62,1.85,1.95,19.57,93,8.7],
+[6,'FIFA 18','PS4',2017,'Sports','Electronic Arts',4.12,9.45,0.45,1.75,15.77,84,7.8],
+[7,'Super Mario Odyssey','Switch',2017,'Platform','Nintendo',8.92,5.23,3.12,1.23,18.50,97,9.2],
+[8,'Call of Duty: Black Ops 3','PS4',2015,'Shooter','Activision',6.45,5.89,0.89,1.45,14.68,81,7.5],
+[9,'The Witcher 3: Wild Hunt','PS4',2015,'RPG','CD Projekt',5.12,6.78,0.56,1.23,13.69,92,9.5],
+[10,'God of War (2018)','PS4',2018,'Action','Sony Interactive Entertainment',7.85,5.23,0.45,1.12,14.65,94,9.7],
+[11,'Uncharted 4: A Thief's End','PS4',2016,'Action','Sony Interactive Entertainment',6.89,5.45,0.23,1.05,13.62,93,9.0],
+[12,'Mario Kart 8 Deluxe','Switch',2017,'Racing','Nintendo',7.45,4.56,2.45,0.89,15.35,92,9.1],
+[13,'The Last of Us','PS4',2014,'Action','Sony Interactive Entertainment',5.89,4.78,0.67,0.95,12.29,95,9.4],
+[14,'Horizon Zero Dawn','PS4',2017,'Action','Sony Interactive Entertainment',5.23,4.89,0.34,0.78,11.24,89,8.9],
+[15,'Super Smash Bros. Ultimate','Switch',2018,'Fighting','Nintendo',6.78,3.45,2.78,0.67,13.68,93,9.2],
+[16,'Spider-Man (2018)','PS4',2018,'Action','Sony Interactive Entertainment',7.45,4.23,0.23,0.89,12.80,87,8.8],
+[17,'Call of Duty: WWII','PS4',2017,'Shooter','Activision',5.67,4.56,0.12,0.78,11.13,80,7.9],
+[18,'Monster Hunter: World','PS4',2018,'Action','Capcom',4.56,3.89,2.45,0.67,11.57,90,8.8],
+[19,'Assassin's Creed Odyssey','PS4',2018,'Action','Ubisoft',4.23,4.56,0.23,0.56,9.58,83,8.4],
+[20,'Persona 5','PS4',2016,'RPG','Atlus',2.45,1.89,3.45,0.45,8.24,93,9.1],
+[21,'Resident Evil 2 (2019)','PS4',2019,'Survival','Capcom',3.89,3.45,1.23,0.67,9.24,91,9.3],
+[22,'The Legend of Zelda: Tears of the Kingdom','Switch',2023,'Adventure','Nintendo',8.45,6.78,2.45,1.23,18.91,96,9.5],
+[23,'Elden Ring','PS5',2022,'RPG','Bandai Namco',7.89,6.45,1.89,1.45,17.68,96,9.4],
+[24,'Star Wars Jedi: Survivor','PS5',2023,'Action','Electronic Arts',5.67,4.23,0.45,0.89,11.24,85,8.6],
+[25,'Hogwarts Legacy','PS5',2023,'RPG','Warner Bros.',8.23,7.45,0.67,1.23,17.58,84,8.9],
+[26,'Final Fantasy XVI','PS5',2023,'RPG','Square Enix',4.56,3.89,2.45,0.78,11.68,87,8.7],
+[27,'Diablo IV','PS5',2023,'RPG','Blizzard Entertainment',5.89,4.56,0.23,0.67,11.35,88,8.5],
+[28,'Street Fighter 6','PS5',2023,'Fighting','Capcom',3.45,2.89,1.45,0.45,8.24,92,9.0],
+[29,'Dead Space (2023)','PS5',2023,'Survival','Electronic Arts',3.89,3.12,0.23,0.56,7.80,89,8.8],
+[30,'Forza Horizon 5','XSX',2021,'Racing','Xbox Game Studios',6.45,5.23,0.12,0.89,12.69,92,9.2],
+[31,'Halo Infinite','XSX',2021,'Shooter','Xbox Game Studios',5.78,3.45,0.08,0.67,9.98,87,8.4],
+[32,'Returnal','PS5',2021,'Shooter','Sony Interactive Entertainment',2.45,2.89,0.23,0.34,5.91,86,8.7],
+[33,'Ratchet & Clank: Rift Apart','PS5',2021,'Platform','Sony Interactive Entertainment',3.45,2.78,0.12,0.45,6.80,88,8.9],
+[34,'Demon's Souls (2020)','PS5',2020,'Action','Sony Interactive Entertainment',2.89,2.45,0.45,0.23,6.02,92,9.1],
+[35,'Marvel's Spider-Man: Miles Morales','PS5',2020,'Action','Sony Interactive Entertainment',4.56,3.45,0.12,0.56,8.69,85,8.8],
+[36,'Animal Crossing: New Horizons','Switch',2020,'Simulation','Nintendo',9.45,6.78,4.56,1.23,22.02,90,9.0],
+[37,'Cyberpunk 2077','PS5',2020,'RPG','CD Projekt',4.23,3.89,0.23,0.67,9.02,76,7.2],
+[38,'Ghost of Tsushima','PS4',2020,'Action','Sony Interactive Entertainment',5.67,4.23,0.45,0.78,11.13,83,9.2],
+[39,'The Last of Us Part II','PS4',2020,'Action','Sony Interactive Entertainment',6.45,4.56,0.23,0.89,12.13,93,8.5],
+[40,'Final Fantasy VII Remake','PS4',2020,'RPG','Square Enix',4.23,3.45,1.89,0.56,10.13,87,8.8],
+[41,'Doom Eternal','PS4',2020,'Shooter','Bethesda Softworks',3.89,2.78,0.12,0.45,7.24,88,8.9],
+[42,'Assassin's Creed Valhalla','PS5',2020,'Action','Ubisoft',5.23,4.56,0.23,0.67,10.69,84,8.2],
+[43,'Watch Dogs: Legion','PS5',2020,'Action','Ubisoft',3.45,2.89,0.12,0.34,6.80,70,7.5],
+[44,'Sackboy: A Big Adventure','PS5',2020,'Platform','Sony Interactive Entertainment',2.45,2.12,0.08,0.23,4.88,79,8.4],
+[45,'Destiny 2: Beyond Light','PS5',2020,'Shooter','Bungie',3.12,2.45,0.05,0.23,5.85,77,7.8],
+[46,'Mortal Kombat 11 Ultimate','PS5',2020,'Fighting','Warner Bros.',2.89,1.78,0.12,0.34,5.13,82,8.6],
+[47,'Immortals Fenyx Rising','PS5',2020,'Action','Ubisoft',2.45,2.12,0.08,0.23,4.88,77,8.1],
+[48,'Marvel's Avengers','PS5',2020,'Action','Square Enix',3.45,2.23,0.12,0.34,6.14,67,6.8],
+[49,'Bugsnax','PS5',2020,'Adventure','Young Horses',1.23,0.89,0.05,0.12,2.29,75,8.2],
+[50,'Godfall','PS5',2020,'Action','Gearbox Publishing',1.89,1.23,0.08,0.23,3.43,61,6.5]
+    ], columns=['Rank','Name','Platform','Year','Genre','Publisher',
+               'NA_Sales','EU_Sales','JP_Sales','Other_Sales',
+               'Global_Sales','Critic_Score','User_Score'])
+    
+    # Convert scores to numeric
+    data['User_Score'] = pd.to_numeric(data['User_Score'], errors='coerce')
+    data['Critic_Score'] = pd.to_numeric(data['Critic_Score'], errors='coerce')
+    
+    # Create derived features
+    data['Total_Score'] = (data['Critic_Score'] * 0.7) + (data['User_Score'] * 3)  # Weighted score
+    data['EU_NA_Ratio'] = data['EU_Sales'] / data['NA_Sales']
+    data['JP_Percentage'] = data['JP_Sales'] / data['Global_Sales']
+    
+    # Handle missing scores
+    data['Total_Score'] = data['Total_Score'].fillna(data['Total_Score'].median())
+    
+    return data
+
+# ==================== EXPLORATORY ANALYSIS ====================
+def perform_eda(data):
+    """Generate comprehensive visualizations"""
+    plt.figure(figsize=(18, 15))
+    plt.suptitle('Video Game Sales Analysis', fontsize=16)
+    
+    # Global sales by platform
+    plt.subplot(3, 2, 1)
+    platform_sales = data.groupby('Platform')['Global_Sales'].sum().sort_values()
+    platform_sales.plot(kind='barh', color='steelblue')
+    plt.title('Total Sales by Platform')
+    plt.xlabel('Global Sales (millions)')
+    
+    # Genre distribution
+    plt.subplot(3, 2, 2)
+    genre_counts = data['Genre'].value_counts()
+    genre_counts.plot(kind='pie', autopct='%1.1f%%')
+    plt.title('Game Genre Distribution')
+    plt.ylabel('')
+    
+    # Sales trend over years
+    plt.subplot(3, 2, 3)
+    yearly_sales = data.groupby('Year')['Global_Sales'].sum()
+    yearly_sales.plot(marker='o')
+    plt.title('Yearly Sales Trend')
+    plt.ylabel('Global Sales (millions)')
+    plt.grid(True)
+    
+    # Score vs Sales
+    plt.subplot(3, 2, 4)
+    sns.scatterplot(x='Total_Score', y='Global_Sales', hue='Platform', data=data)
+    plt.title('Review Scores vs Global Sales')
+    
+    # Regional sales comparison
+    plt.subplot(3, 2, 5)
+    regional = data[['NA_Sales','EU_Sales','JP_Sales','Other_Sales']].mean()
+    regional.plot(kind='bar', color=['blue','green','red','purple'])
+    plt.title('Average Regional Sales (millions)')
+    plt.xticks(rotation=45)
+    
+    # Publisher performance
+    plt.subplot(3, 2, 6)
+    top_publishers = data.groupby('Publisher')['Global_Sales'].sum().nlargest(5)
+    top_publishers.plot(kind='bar', color='orange')
+    plt.title('Top Publishers by Global Sales')
+    plt.xticks(rotation=45)
+    
+    plt.tight_layout()
+    plt.savefig('game_sales_eda.png')
+    plt.show()
+
+# ==================== STATISTICAL ANALYSIS ====================
+def perform_statistical_analysis(data):
+    """Conduct hypothesis testing and correlations"""
+    print("\n=== Statistical Analysis Results ===")
+    
+    # Platform comparison
+    platforms = ['PS4', 'Switch', 'PS5']
+    platform_groups = [data[data['Platform'] == p]['Global_Sales'] for p in platforms]
+    
+    # ANOVA test
+    f_stat, p_value = stats.f_oneway(*platform_groups)
+    print(f"\nPlatform Sales Differences - ANOVA p-value: {p_value:.4f}")
+    
+    # Correlation matrix
+    numeric_cols = ['Global_Sales', 'Critic_Score', 'User_Score', 'NA_Sales', 'EU_Sales', 'JP_Sales']
+    corr_matrix = data[numeric_cols].corr(method='spearman')
+    print("\nSpearman Correlation Matrix:")
+    print(corr_matrix)
+    
+    # Genre profitability
+    genre_profit = data.groupby('Genre')['Global_Sales'].mean().sort_values(ascending=False)
+    print("\nAverage Sales by Genre:")
+    print(genre_profit)
+
+# ==================== CLUSTER ANALYSIS ====================
+def perform_clustering(data):
+    """Cluster games based on sales patterns"""
+    # Prepare features
+    features = data[['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales']]
+    features = features.apply(lambda x: x/x.sum(), axis=1)  # Normalize
+    
+    # Optimal clusters
+    distortions = []
+    for k in range(1, 6):
+        kmeans = KMeans(n_clusters=k, random_state=42)
+        kmeans.fit(features)
+        distortions.append(kmeans.inertia_)
+    
+    # Plot elbow curve
+    plt.figure(figsize=(8, 4))
+    plt.plot(range(1, 6), distortions, marker='o')
+    plt.title('Elbow Method for Optimal Clusters')
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Distortion')
+    plt.savefig('cluster_elbow.png')
+    plt.show()
+    
+    # Final clustering
+    optimal_k = 3
+    kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+    data['Sales_Cluster'] = kmeans.fit_predict(features)
+    
+    # Cluster characteristics
+    cluster_profile = data.groupby('Sales_Cluster')[['NA_Sales','EU_Sales','JP_Sales']].mean()
+    print("\nCluster Sales Profiles:")
+    print(cluster_profile)
+    
+    return data
+
+# ==================== PREDICTIVE MODELING ====================
+def build_predictive_model(data):
+    """Predict global sales based on features"""
+    # Prepare data
+    features = data[['Platform', 'Genre', 'Publisher', 'Critic_Score', 'User_Score', 'Year']]
+    target = data['Global_Sales']
+    
+    # Encode categoricals
+    le = LabelEncoder()
+    for col in ['Platform', 'Genre', 'Publisher']:
+        features[col] = le.fit_transform(features[col])
+    
+    # Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(
+        features, target, test_size=0.2, random_state=42)
+    
+    # Train model
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    
+    # Evaluate
+    y_pred = model.predict(X_test)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
+    
+    print("\nModel Performance:")
+    print(f"RMSE: {rmse:.2f}")
+    print(f"R-squared: {r2:.2f}")
+    
+    # Feature importance
+    importance = pd.Series(model.feature_importances_, index=features.columns)
+    importance = importance.sort_values(ascending=False)
+    
+    plt.figure(figsize=(8, 4))
+    importance.plot(kind='bar')
+    plt.title('Feature Importance for Sales Prediction')
+    plt.savefig('feature_importance.png')
+    plt.show()
+    
+    return model
+
+# ==================== MAIN EXECUTION ====================
+if __name__ == "__main__":
+    print("=== Video Game Sales Analytics ===")
+    
+    # Load and prepare data
+    print("\nLoading data...")
+    game_data = load_data()
+    print(f"Data loaded with {len(game_data)} records from {game_data['Year'].min()} to {game_data['Year'].max()}")
+    
+    # Exploratory analysis
+    print("\nPerforming exploratory analysis...")
+    perform_eda(game_data)
+    
+    # Statistical tests
+    print("\nRunning statistical tests...")
+    perform_statistical_analysis(game_data)
+    
+    # Cluster analysis
+    print("\nPerforming cluster analysis...")
+    game_data = perform_clustering(game_data)
+    
+    # Predictive modeling
+    print("\nBuilding predictive model...")
+    sales_model = build_predictive_model(game_data)
+    
+    print("\n=== Analysis Complete ===")
+    print("Generated files:")
+    print("- game_sales_eda.png (Exploratory visualizations)")
+    print("- cluster_elbow.png (Cluster analysis)")
+    print("- feature_importance.png (Model insights)")
