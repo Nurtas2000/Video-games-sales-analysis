@@ -14,6 +14,6 @@ Comprehensive analysis of video game sales data with:
 
 ## Installation
 ```bash
-git clone https://github.com/yourusername/game-sales-analytics.git
+git clone https://github.com/Nurtas2000/game-sales-analytics.git
 cd game-sales-analytics
 pip install -r requirements.txt
